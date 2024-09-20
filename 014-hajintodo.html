@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하진의 투두리스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        #todo-form {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #todo-input {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f1f1f1;
+            margin-bottom: 10px;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        .todo-lists {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .list-container {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        .move-btn {
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>하진의 투두리스트</h1>
+    <form id="todo-form">
+        <input type="text" id="todo-input" placeholder="할 일을 입력하세요" required>
+        <button type="submit">추가</button>
+    </form>
+    <div class="todo-lists">
+        <div class="list-container">
+            <h2>할 일 목록</h2>
+            <ul id="todo-list"></ul>
+        </div>
+        <div class="list-container">
+            <h2>지금 하고 있어야 하는 일</h2>
+            <ul id="in-progress-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        // form, input, todoList, inProgressList 요소를 가져옵니다.
+        const form = document.getElementById('todo-form');
+        const input = document.getElementById('todo-input');
+        const todoList = document.getElementById('todo-list');
+        const inProgressList = document.getElementById('in-progress-list');
+
+        // 페이지 로드 시 저장된 할 일 목록을 불러옵니다.
+        document.addEventListener('DOMContentLoaded', loadTodos);
+
+        // form 제출 이벤트를 처리합니다.
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            addTodo();
+        });
+
+        // 새로운 할 일을 추가하는 함수입니다.
+        function addTodo() {
+            // 입력값이 비어있으면 함수를 종료합니다.
+            if (input.value.trim() === '') return;
+
+            // 새로운 할 일 요소를 생성합니다.
+            const li = createTodoElement(input.value);
+            // 할 일 목록에 새 요소를 추가합니다.
+            todoList.appendChild(li);
+            // 할 일 목록을 저장합니다.
+            saveTodos();
+            // 입력 필드를 비웁니다.
+            input.value = '';
+        }
+
+        // 할 일 요소를 생성하는 함수입니다.
+        function createTodoElement(text) {
+            // 새로운 li 요소를 생성합니다.
+            const li = document.createElement('li');
+            // li 요소의 내용을 설정합니다.
+            li.innerHTML = `
+                <span>${text}</span>
+                <button class="move-btn">진행 중으로 이동</button>
+                <button class="delete-btn">삭제</button>
+            `;
+
+            // 이동 버튼에 클릭 이벤트 리스너를 추가합니다.
+            li.querySelector('.move-btn').addEventListener('click', function() {
+                moveTodo(li);
+            });
+
+            // 삭제 버튼에 클릭 이벤트 리스너를 추가합니다.
+            li.querySelector('.delete-btn').addEventListener('click', function() {
+                // 요소를 삭제합니다.
+                li.remove();
+                // 변경사항을 저장합니다.
+                saveTodos();
+            });
+
+            // 생성된 li 요소를 반환합니다.
+            return li;
+        }
+
+        // 할 일을 이동시키는 함수입니다.
+        function moveTodo(li) {
+            // li: 이동할 할 일 항목을 나타내는 HTML 요소
+            const moveBtn = li.querySelector('.move-btn');
+            // moveBtn: 이동 버튼 요소
+
+            if (li.parentElement === todoList) {
+                // li.parentElement: 현재 할 일 항목의 부모 요소입니다. 이는 할 일 항목(li)이 속한 목록(ul)을 나타냅니다. 여기서는 todoList 또는 inProgressList가 될 수 있습니다.
+                // todoList: 할 일 목록을 나타내는 HTML 요소
+                
+                // 할 일에서 진행 중으로 이동합니다.
+                inProgressList.appendChild(li);
+                // inProgressList: 진행 중인 일 목록을 나타내는 HTML 요소
+                moveBtn.textContent = '할 일로 이동';
+                // moveBtn.textContent: 이동 버튼의 텍스트 내용
+            } else {
+                // 진행 중에서 할 일로 이동합니다.
+                todoList.appendChild(li);
+                moveBtn.textContent = '진행 중으로 이동'; // 이동 버튼의 텍스트를 '진행 중으로 이동'으로 변경합니다. 이는 할 일 목록으로 이동했음을 나타냅니다.
+            }
+            // 변경사항을 저장합니다.
+            saveTodos();
+            // saveTodos: 할 일 목록을 저장하는 함수
+        }
+
+        // 할 일 목록을 저장하는 함수입니다.
+        function saveTodos() {
+            // 할 일 목록의 텍스트를 배열로 만듭니다.
+            const todos = Array.from(todoList.children).map(li => li.querySelector('span').textContent);
+            // 진행 중인 일 목록의 텍스트를 배열로 만듭니다.
+            const inProgress = Array.from(inProgressList.children).map(li => li.querySelector('span').textContent);
+            // localStorage에 할 일과 진행 중인 일 목록을 저장합니다.
+            localStorage.setItem('todos', JSON.stringify({todos, inProgress}));
+        }
+
+        // 저장된 할 일 목록을 불러오는 함수입니다.
+        function loadTodos() {
+            // localStorage에서 저장된 할 일 목록을 가져옵니다.
+            const savedTodos = localStorage.getItem('todos');
+            if (savedTodos) {
+                // 저장된 데이터를 파싱합니다.
+                const {todos, inProgress} = JSON.parse(savedTodos);
+                // 할 일 목록을 생성하고 추가합니다.
+                todos.forEach(todo => {
+                    const li = createTodoElement(todo);
+                    todoList.appendChild(li);
+                });
+                // 진행 중인 일 목록을 생성하고 추가합니다.
+                inProgress.forEach(todo => {
+                    const li = createTodoElement(todo);
+                    inProgressList.appendChild(li);
+                    li.querySelector('.move-btn').textContent = '할 일로 이동';
+                });
+            }
+        }
+    </script>
+</body>
+</html>
