@@ -81,7 +81,17 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+
+        const firebaseConfig = {
+            // 여기에 실제 Firebase 프로젝트 설정을 입력하세요
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
         // form, input, todoList, inProgressList 요소를 가져옵니다.
         const form = document.getElementById('todo-form');
         const input = document.getElementById('todo-input');
@@ -171,29 +181,32 @@
             const todos = Array.from(todoList.children).map(li => li.querySelector('span').textContent);
             // 진행 중인 일 목록의 텍스트를 배열로 만듭니다.
             const inProgress = Array.from(inProgressList.children).map(li => li.querySelector('span').textContent);
-            // localStorage에 할 일과 진행 중인 일 목록을 저장합니다.
-            localStorage.setItem('todos', JSON.stringify({todos, inProgress}));
+            // Firebase에 할 일 저장
+            set(ref(database, 'todos'), {
+                todoList: todos,
+                inProgressList: inProgress
+            });
         }
 
         // 저장된 할 일 목록을 불러오는 함수입니다.
         function loadTodos() {
-            // localStorage에서 저장된 할 일 목록을 가져옵니다.
-            const savedTodos = localStorage.getItem('todos');
-            if (savedTodos) {
-                // 저장된 데이터를 파싱합니다.
-                const {todos, inProgress} = JSON.parse(savedTodos);
-                // 할 일 목록을 생성하고 추가합니다.
-                todos.forEach(todo => {
-                    const li = createTodoElement(todo);
-                    todoList.appendChild(li);
-                });
-                // 진행 중인 일 목록을 생성하고 추가합니다.
-                inProgress.forEach(todo => {
-                    const li = createTodoElement(todo);
-                    inProgressList.appendChild(li);
-                    li.querySelector('.move-btn').textContent = '할 일로 이동';
-                });
-            }
+            // Firebase에서 할 일 불러오기
+            onValue(ref(database, 'todos'), (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    todoList.innerHTML = '';
+                    inProgressList.innerHTML = '';
+                    data.todoList.forEach(todo => {
+                        const li = createTodoElement(todo);
+                        todoList.appendChild(li);
+                    });
+                    data.inProgressList.forEach(todo => {
+                        const li = createTodoElement(todo);
+                        inProgressList.appendChild(li);
+                        li.querySelector('.move-btn').textContent = '할 일로 이동';
+                    });
+                }
+            });
         }
     </script>
 </body>
